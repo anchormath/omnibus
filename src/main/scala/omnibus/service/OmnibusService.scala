@@ -7,6 +7,7 @@ import akka.pattern._
 import scala.concurrent._
 import scala.concurrent.duration._
 import scala.util._
+import scala.collection.immutable.Set
 
 import omnibus.service.OmnibusServiceProtocol._
 import omnibus.repository._
@@ -24,6 +25,7 @@ class OmnibusService(topicRepo: ActorRef, subscriberRepo: ActorRef) extends Acto
   def receive = {
     case CreateTopic(topic)                              => sender ! createTopic(topic)
     case DeleteTopic(topic)                              => sender ! deleteTopic(topic)
+    case ListRootTopics                                  => listRootTopics(sender)
     case CheckTopic(topic)                               => checkTopic(topic, sender)
     case PublishToTopic(topic, message)                  => publishToTopic(topic, message) pipeTo sender
     case SubToTopic(topic, responder, reactiveCmd, http) => subToTopic(topic, responder, reactiveCmd, http) pipeTo sender
@@ -33,11 +35,17 @@ class OmnibusService(topicRepo: ActorRef, subscriberRepo: ActorRef) extends Acto
     case LookupTopic(topic)                              => lookupTopic(topic) pipeTo sender
   }
 
+
   def createTopic(topic: String) = topicRepo ! TopicRepositoryProtocol.CreateTopicActor(topic)
 
   def deleteTopic(topic: String): String = {
     topicRepo ! TopicRepositoryProtocol.DeleteTopicActor(topic)
     s"Topic $topic deleted \n"
+  }
+
+  def listRootTopics(replyTo: ActorRef) = {
+    val roots = (topicRepo ? TopicRepositoryProtocol.ListTopics).mapTo[Set[String]]
+    roots pipeTo replyTo
   }
 
   def checkTopic(topic: String, replyTo: ActorRef) = {
@@ -108,6 +116,7 @@ class OmnibusService(topicRepo: ActorRef, subscriberRepo: ActorRef) extends Acto
 }
 
 object OmnibusServiceProtocol {
+  case object ListRootTopics
   case class CreateTopic(topic: String)
   case class DeleteTopic(topic: String)
   case class CheckTopic(topic: String)

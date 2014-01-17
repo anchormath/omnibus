@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory
 import scala.concurrent._
 import scala.concurrent.duration._
 import scala.language.postfixOps
+import scala.collection.immutable.Set
 
 import omnibus.service._
 import omnibus.configuration._
@@ -24,6 +25,9 @@ class OmnibusReceptionist(system: ActorSystem, omnibusService: ActorRef) {
 
   val log: Logger = LoggerFactory.getLogger("OmnibusReceptionist")
 
+  def listTopicRoots() : Future[Set[String]]= {
+    (omnibusService ? OmnibusServiceProtocol.ListRootTopics).mapTo[Set[String]]
+  }
   def createTopic(topic: String) = {
     omnibusService ! OmnibusServiceProtocol.CreateTopic(topic)
   }

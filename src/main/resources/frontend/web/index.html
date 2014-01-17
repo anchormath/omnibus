@@ -1,0 +1,25 @@
+<html>
+<head>
+  <meta charset="utf-8" />
+</head>
+<body>
+<h2>Home page</h2>
+  <script>
+  function subscribe() {
+	if (!!window.EventSource) {
+		var source = new EventSource('/topics/home');
+		console.log("subscriber to topics/home ready")
+	    source.addEventListener('home' , function(e) {
+	      console.log("got message")
+	      document.body.innerHTML += e.data + '<br/>';
+	    }, false);
+	} else {
+		  console.log("no SSE support!")
+		}
+  }
+  </script>
+  <input type="button" onclick="subscribe()" value="Start event listener"></input>
+  <br/>
+</body>
+</html>
+</html>

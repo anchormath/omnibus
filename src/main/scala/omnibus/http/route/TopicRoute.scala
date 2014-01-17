@@ -11,6 +11,8 @@ import spray.routing._
 import spray.can.Http._
 import spray.http._
 import spray.can.server.Stats
+import spray.json._
+import DefaultJsonProtocol._
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -18,6 +20,7 @@ import org.slf4j.LoggerFactory
 import scala.concurrent.duration._
 import scala.concurrent.Future
 import scala.util._
+import scala.collection.immutable.Set
 
 import DefaultJsonProtocol._
 import reflect.ClassTag
@@ -67,10 +70,19 @@ class TopicRoute(omnibusService: ActorRef) (implicit context: ActorContext) exte
         } ~
         parameters('mode.as[String] ? "simple", 'since.as[Long]?, 'to.as[Long]?).as(ReactiveCmd) { reactiveCmd =>
           get { ctx =>
-            val future = (omnibusService ? OmnibusServiceProtocol.SubToTopic(topic, ctx.responder, reactiveCmd, true)).mapTo[Boolean]
-            future.onComplete {
-              case Success(result) => log.debug("Alles klar, let's stream")
-              case Failure(result) => ctx.complete(StatusCodes.NotFound, s"topic '$topic' not found \n")
+            if (topic.equals("ALL")){
+              val future = (omnibusService ? OmnibusServiceProtocol.ListRootTopics).mapTo[Set[String]]
+              future.onComplete {
+                case Success(set) => ctx.complete(set.toJson.prettyPrint)
+                case Failure(result) => ctx.complete("Error")
+              }
+            }
+            else {
+              val future = (omnibusService ? OmnibusServiceProtocol.SubToTopic(topic, ctx.responder, reactiveCmd, true)).mapTo[Boolean]
+              future.onComplete {
+                case Success(result) => log.debug("Alles klar, let's stream")
+                case Failure(result) => ctx.complete(StatusCodes.NotFound, s"topic '$topic' not found \n")
+              }
             }
           }
         }

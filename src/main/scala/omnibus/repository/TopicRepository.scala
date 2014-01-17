@@ -8,6 +8,7 @@ import scala.concurrent.duration._
 import scala.concurrent.Future
 import scala.language.postfixOps
 import scala.util._
+import scala.collection.immutable.Set
 
 import spray.caching.{ LruCache, Cache }
 
@@ -36,6 +37,7 @@ class TopicRepository extends Actor with ActorLogging {
   def receive = {
     case CreateTopicActor(topic)              => createTopic(topic)
     case DeleteTopicActor(topic)              => deleteTopic(topic)
+    case ListTopics                           => sender ! listRootTopics
     case CheckTopicActor(topic)               => sender ! checkTopic(topic)
     case LookupTopicActor(topic)              => sender ! lookUpTopicWithCache(topic)
     case PublishToTopicActor(topic, message)  => publishToTopic(topic, message)
@@ -44,6 +46,11 @@ class TopicRepository extends Actor with ActorLogging {
     case TopicProtocol.Propagation            => log.debug("message propoagation reached TopicRepository")
   }
 
+
+  def listRootTopics() : Set[String]= {
+    log.info("root topics : " + rootTopics.keySet.mkString)
+    rootTopics.keySet
+  }
   def createTopic(topicName: String) = {
     val topicsList = topicName.split('/').toList
     val topicRoot = topicsList.head
@@ -128,6 +135,7 @@ object TopicRepositoryProtocol {
   case class PublishToTopicActor(topicName: String, message: String)
   case class TopicPastStatActor(topic: String, replyTo : ActorRef)
   case class TopicLiveStatActor(topic: String, replyTo : ActorRef)
+  case object ListTopics
 }
 
 

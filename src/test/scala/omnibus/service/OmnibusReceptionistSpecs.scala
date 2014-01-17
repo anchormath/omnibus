@@ -13,6 +13,7 @@ class OmnibusReceptionistSpecs extends Specification {
       "Publish to topic"      ! publishToTopic ^
       "Subscribe to topic"    ! subscribeToTopic ^
       "Unsubscribe from topic" ! unsubscribeFromTopic ^
+      "List all root topics"   ! listRootTopics() ^
       end
 
     def startNewSystem() = {
@@ -50,5 +51,11 @@ class OmnibusReceptionistSpecs extends Specification {
 
     def unsubscribeFromTopic() = {
     	true 
-    }        
+    }
+
+    def listRootTopics() = {
+      val receptionist : OmnibusReceptionist = OmnibusBuilder.start()
+      receptionist.createTopic("test/topic")
+      receptionist.listTopicRoots()
+    }
 }
